@@ -8,11 +8,11 @@ class UsersList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      title: Text(user.name),
+      title: Text(user.nombre),
       subtitle: Text(user.email),
       leading: CircleAvatar(
         backgroundColor: Colors.blue[200],
-        child: Text(user.name.substring(0, 2)),
+        child: Text(user.nombre.substring(0, 2)),
       ),
       trailing: Container(
         width: 10,

@@ -1,5 +1,11 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
+import 'package:flutter_chat_app/src/helpers/mostrar_alerta.dart';
 import 'package:flutter_chat_app/src/widgets/widgets.dart';
+import 'package:provider/provider.dart';
+
+import '../services/auth_service.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -46,6 +52,7 @@ class __FormState extends State<_Form> {
 
   @override
   Widget build(BuildContext context) {
+    final authServices = Provider.of<AuthService>(context);
     return Container(
       margin: const EdgeInsets.only(
         top: 40,
@@ -63,6 +70,7 @@ class __FormState extends State<_Form> {
             textController: emailCrl,
             icon: Icons.email_outlined,
             placeHolder: 'Email',
+            keyboardType: TextInputType.emailAddress,
           ),
           CustomInput(
             textController: passwordCtrl,
@@ -71,7 +79,21 @@ class __FormState extends State<_Form> {
             isPassword: true,
           ),
           BotonAzul(
-            onPressed: () {},
+            onPressed: authServices.autenticando
+                ? null
+                : () async {
+                    FocusScope.of(context).unfocus();
+                    final registerOk = await authServices.register(
+                        nameCtrl.text.trim(),
+                        emailCrl.text.trim(),
+                        passwordCtrl.text.trim());
+                    if (registerOk == true) {
+                      //conectar al socketServer
+                      Navigator.pushReplacementNamed(context, 'usuarios');
+                    } else {
+                      mostrarAlerta(context, 'Registro incorrecto', registerOk);
+                    }
+                  },
             text: 'Registrar',
           )
         ],
