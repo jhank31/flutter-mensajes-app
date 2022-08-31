@@ -2,6 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_chat_app/src/models/messages_response.dart';
+import 'package:flutter_chat_app/src/services/auth_service.dart';
+import 'package:flutter_chat_app/src/services/chat_service.dart';
+import 'package:flutter_chat_app/src/services/socket_service.dart';
+import 'package:provider/provider.dart';
 
 import '../widgets/widgets.dart';
 
@@ -15,14 +20,60 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
-  bool estaEscribiendo = false;
+  late ChatService chatServices;
+  late SocketServices socketServices;
+  late AuthService authService;
   final List<ChatMessage> _messages = [];
+
+  @override
+  void initState() {
+    chatServices = Provider.of<ChatService>(context, listen: false);
+    socketServices = Provider.of<SocketServices>(context, listen: false);
+    authService = Provider.of<AuthService>(context, listen: false);
+    socketServices.socket.on('mensaje-personal', _escucharMensaje);
+    _cargarHistorial(chatServices.usuarioPara.uid);
+    super.initState();
+  }
+
+  void _cargarHistorial(String uid) async {
+    List<Mensaje> chat = await chatServices.getChat(uid);
+
+    final history = chat.map((m) => ChatMessage(
+        text: m.mensaje,
+        uid: m.de,
+        animationController: AnimationController(
+            vsync: this, duration: const Duration(milliseconds: 0))
+          ..forward()));
+
+    setState(() {
+      _messages.insertAll(0, history);
+    });
+  }
+
+  void _escucharMensaje(dynamic data) {
+    ChatMessage message = ChatMessage(
+        text: data('mensaje'),
+        uid: data('de'),
+        animationController: AnimationController(
+            vsync: this, duration: const Duration(milliseconds: 300)));
+    setState(() {
+      _messages.insert(0, message);
+    });
+    message.animationController.forward();
+  }
+
+  bool estaEscribiendo = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
+        leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.blue[400],
+            )),
         elevation: 1,
         backgroundColor: Colors.white,
         title: const AppBarChat(),
@@ -100,14 +151,12 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   _handleSubmit(String texto) {
     if (texto.isEmpty) return;
 
-    print(texto);
-
     _textController.clear();
     _focusNode.requestFocus();
 
     final newMessage = ChatMessage(
       text: texto,
-      uid: '123',
+      uid: authService.usuario!.uid,
       animationController: AnimationController(
           vsync: this, duration: const Duration(milliseconds: 400)),
     );
@@ -117,6 +166,11 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     setState(() {
       estaEscribiendo;
     });
+    socketServices.emit('mensaje-personal', {
+      'de': authService.usuario!.uid,
+      'para': chatServices.usuarioPara.uid,
+      'mensaje': texto
+    });
   }
 
   @override
@@ -124,6 +178,8 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     for (ChatMessage message in _messages) {
       message.animationController.dispose();
     }
+    socketServices.socket.off('mensaje-personal');
+
     super.dispose();
   }
 }

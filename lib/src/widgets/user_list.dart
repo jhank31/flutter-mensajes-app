@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_app/src/models/usuario.dart';
+import 'package:flutter_chat_app/src/services/chat_service.dart';
+import 'package:provider/provider.dart';
 
 class UsersList extends StatelessWidget {
   final Usuario user;
@@ -21,6 +23,11 @@ class UsersList extends StatelessWidget {
             color: user.online ? Colors.green[300] : Colors.red,
             borderRadius: BorderRadius.circular(100)),
       ),
+      onTap: () {
+        final chatService = Provider.of<ChatService>(context, listen: false);
+        chatService.usuarioPara = user;
+        Navigator.pushNamed(context, 'chat');
+      },
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_app/src/helpers/mostrar_alerta.dart';
 import 'package:flutter_chat_app/src/services/auth_service.dart';
+import 'package:flutter_chat_app/src/services/socket_service.dart';
 import 'package:flutter_chat_app/src/widgets/widgets.dart';
 import 'package:provider/provider.dart';
 
@@ -49,6 +50,7 @@ class __FormState extends State<_Form> {
   @override
   Widget build(BuildContext context) {
     final authServices = Provider.of<AuthService>(context);
+    final socketServices = Provider.of<SocketServices>(context);
     return Container(
       margin: const EdgeInsets.only(
         top: 40,
@@ -77,6 +79,7 @@ class __FormState extends State<_Form> {
                         emailCtrl.text.trim(), passwordCtrl.text.trim());
 
                     if (loginOk) {
+                      socketServices.connect();
                       // ignore: use_build_context_synchronously
                       Navigator.pushReplacementNamed(context, 'usuarios');
                     } else {
